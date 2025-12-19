@@ -15,7 +15,7 @@ Turbo 是基于c++17标准的c++基础库，是Kumo产品的基础设施。Turbo
 Turbo没有第三方依赖，直接下载编译即可。
 
 ```shell
-git clone https://gitee.com/kumo-pub/turbo.git
+git clone https://github.com/kumose/turbo.git
 cd turbo
 cmake --preset=kmpkg
 cmake --build build
@@ -26,7 +26,7 @@ cmake --build build
 ```shell
 kmpkg install gtest
 kmpkg install benchmark
-git clone https://gitee.com/kumo-pub/turbo.git
+git clone https://github.com/kumose/turbo.git
 cd turbo
 mkdir build && cd build
 cmake --preset=kmpkg -DCARBIN_BUILD_TEST=ON
