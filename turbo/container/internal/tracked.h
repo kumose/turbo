@@ -1,0 +1,85 @@
+// Copyright (C) 2024 EA group inc.
+// Author: Jeff.li lijippy@163.com
+// All rights reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+
+#ifndef TURBO_CONTAINER_INTERNAL_TRACKED_H_
+#define TURBO_CONTAINER_INTERNAL_TRACKED_H_
+
+#include <stddef.h>
+
+#include <memory>
+#include <utility>
+#include <turbo/base/macros.h>
+
+namespace turbo {
+TURBO_NAMESPACE_BEGIN
+namespace container_internal {
+
+// A class that tracks its copies and moves so that it can be queried in tests.
+template <class T>
+class Tracked {
+ public:
+  Tracked() {}
+  // NOLINTNEXTLINE(runtime/explicit)
+  Tracked(const T& val) : val_(val) {}
+  Tracked(const Tracked& that)
+      : val_(that.val_),
+        num_moves_(that.num_moves_),
+        num_copies_(that.num_copies_) {
+    ++(*num_copies_);
+  }
+  Tracked(Tracked&& that)
+      : val_(std::move(that.val_)),
+        num_moves_(std::move(that.num_moves_)),
+        num_copies_(std::move(that.num_copies_)) {
+    ++(*num_moves_);
+  }
+  Tracked& operator=(const Tracked& that) {
+    val_ = that.val_;
+    num_moves_ = that.num_moves_;
+    num_copies_ = that.num_copies_;
+    ++(*num_copies_);
+  }
+  Tracked& operator=(Tracked&& that) {
+    val_ = std::move(that.val_);
+    num_moves_ = std::move(that.num_moves_);
+    num_copies_ = std::move(that.num_copies_);
+    ++(*num_moves_);
+  }
+
+  const T& val() const { return val_; }
+
+  friend bool operator==(const Tracked& a, const Tracked& b) {
+    return a.val_ == b.val_;
+  }
+  friend bool operator!=(const Tracked& a, const Tracked& b) {
+    return !(a == b);
+  }
+
+  size_t num_copies() { return *num_copies_; }
+  size_t num_moves() { return *num_moves_; }
+
+ private:
+  T val_;
+  std::shared_ptr<size_t> num_moves_ = std::make_shared<size_t>(0);
+  std::shared_ptr<size_t> num_copies_ = std::make_shared<size_t>(0);
+};
+
+}  // namespace container_internal
+TURBO_NAMESPACE_END
+}  // namespace turbo
+
+#endif  // TURBO_CONTAINER_INTERNAL_TRACKED_H_

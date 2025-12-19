@@ -1,0 +1,82 @@
+// Copyright (C) 2024 EA group inc.
+// Author: Jeff.li lijippy@163.com
+// All rights reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+
+#include <turbo/bootstrap/servlet.h>
+#include <turbo/version.h>
+#include <iostream>
+#include <string>
+#include <turbo/flags/declare.h>
+#include <turbo/flags/parse.h>
+#include <turbo/log/logging.h>
+
+TURBO_DECLARE_FLAG(std::vector<std::string>, flags_file);
+TURBO_FLAG(turbo::Duration, test_duration, turbo::Duration::minutes(10), "test flag 12");
+TURBO_FLAG(int, gt_flag, 10, "test flag").on_validate(turbo::GeValidator<int, 5>::validate);
+TURBO_FLAG(turbo::Time, test_time_flag, turbo::Time::past_infinite(),"For testing support for Time flags");
+TURBO_FLAG(turbo::Time, test_time_flag1, turbo::Time::current_time(),"For testing support for Time flags");
+TURBO_FLAG(turbo::CivilSecond, test_flag_civil_second,
+           turbo::CivilSecond(2015, 1, 2, 3, 4, 5), "For testing support for date time flags");
+int main(int argc, char **argv) {
+    auto &svt = turbo::Servlet::instance();
+    svt.set_name("K3Pi")
+        .set_version(TURBO_VERSION_STRING)
+        .set_description("K3Pi goofit fitter");//.add_default_flags_file("conf.flags");
+    svt.root().enable_all_flags_option();
+    turbo::Servlet::setup_default_option(svt.run_app());
+    svt.run_app()->enable_flags_option(FLAGS_test_duration);
+    svt.run_app()->enable_flags_option(FLAGS_test_time_flag);
+    svt.run_app()->enable_flags_option(FLAGS_test_time_flag1);
+    svt.run_app()->enable_flags_option(FLAGS_test_flag_civil_second);
+    std::string file;
+    turbo::cli::Option *opt = svt.run_app()->add_option("-f,--file,file", file, "File name");
+
+    int count{0};
+    turbo::cli::Option *copt = svt.run_app()->add_option("-c,--count", count, "Counter");
+
+    svt.run_app()->add_option_function<int>("--gtf", [](const int&v) {
+        std::cout << "gtf" ;
+        }, "test flag");
+    svt.root().add_option_function<int>("--gtff", [](const int&v) {
+        std::cout << "root gtf" ;
+    }, "test flag");
+
+
+
+    int v{0};
+    turbo::cli::Option *flag = svt.run_app()->add_flag("--flag", v, "Some flag that can be passed multiple times");
+    double value{0.0};  // = 3.14;
+    svt.run_app()->add_option("-d,--double", value, "Some Value");
+    auto [exit, code] = svt.launch(argc, argv);
+    if(exit) {
+        return code;
+    }
+
+    VKLOG(20) << "Working on file: " << file << ", direct count: " << svt.run_app()->count("--file")
+              << ", opt count: " << opt->count() << '\n';
+    VKLOG(0) << "Working on file: " << file << ", direct count: " << svt.run_app()->count("--file")
+             << ", opt count: " << opt->count() << '\n';
+    KLOG(INFO) << "Working on count: " << count << ", direct count: " << svt.run_app()->count("--count")
+              << ", opt count: " << copt->count() << '\n';
+    KLOG(INFO)<< "Received flag: " << v << " (" << flag->count() << ") times\n";
+    KLOG(INFO)<< "Some value: " << value << '\n';
+    KLOG(INFO) << "gt_flag: " << turbo::get_flag(FLAGS_gt_flag) ;
+    for(auto &item : turbo::get_flag(FLAGS_flags_file)) {
+        KLOG(INFO) << "flags_file: " << item ;
+    }
+
+    return 0;
+}

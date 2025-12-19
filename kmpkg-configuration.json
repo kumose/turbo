@@ -1,0 +1,14 @@
+{
+  "default-registry": {
+    "kind": "git",
+    "baseline": "4ec6625d9f23d2bd90a8678f28735ad90c92b1ca",
+    "repository": "https://github.com/kumose/kmpkgcore"
+  },
+  "registries": [
+    {
+      "kind": "artifact",
+      "location": "https://gitee.com/kumo-pub/kmpkg-ce-catalog/archive/refs/heads/main.zip",
+      "name": "microsoft"
+    }
+  ]
+}

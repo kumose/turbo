@@ -1,0 +1,525 @@
+// Copyright (C) 2024 Kumo inc.
+// Author: Jeff.li lijippy@163.com
+// All rights reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+
+#include <gtest/gtest.h>
+#include <turbo/base/fd_guard.h>
+#include <turbo/base/fd_utility.h>
+#include <turbo/utility/errno.h>
+#include <turbo/base/endpoint.h>
+#include <turbo/log/logging.h>
+#include <turbo/container/flat_map.h>
+#include <turbo/base/internal/extended_endpoint.hpp>
+
+namespace turbo {
+    int pthread_timed_connect(int sockfd, const struct sockaddr *serv_addr,
+                              socklen_t addrlen, const timespec *abstime);
+}
+
+namespace {
+
+    using turbo::details::ExtendedEndPoint;
+
+    TEST(EndPointTest, comparisons) {
+        turbo::EndPoint p1(turbo::int2ip(1234), 5678);
+        turbo::EndPoint p2 = p1;
+        ASSERT_TRUE(p1 == p2 && !(p1 != p2));
+        ASSERT_TRUE(p1 <= p2 && p1 >= p2 && !(p1 < p2 || p1 > p2));
+        ++p2.port;
+        ASSERT_TRUE(p1 != p2 && !(p1 == p2));
+        ASSERT_TRUE(p1 < p2 && p2 > p1 && !(p2 <= p1 || p1 >= p2));
+        --p2.port;
+        p2.ip = turbo::int2ip(turbo::ip2int(p2.ip) - 1);
+        ASSERT_TRUE(p1 != p2 && !(p1 == p2));
+        ASSERT_TRUE(p1 > p2 && p2 < p1 && !(p1 <= p2 || p2 >= p1));
+    }
+
+    TEST(EndPointTest, ip_t) {
+        KLOG(INFO) << "INET_ADDRSTRLEN = " << INET_ADDRSTRLEN;
+
+        turbo::ip_t ip0;
+        ASSERT_EQ(0, turbo::str2ip("1.1.1.1", &ip0));
+        ASSERT_STREQ("1.1.1.1", turbo::ip2str(ip0).c_str());
+        ASSERT_EQ(-1, turbo::str2ip("301.1.1.1", &ip0));
+        ASSERT_EQ(-1, turbo::str2ip("1.-1.1.1", &ip0));
+        ASSERT_EQ(-1, turbo::str2ip("1.1.-101.1", &ip0));
+        ASSERT_STREQ("1.0.0.0", turbo::ip2str(turbo::int2ip(1)).c_str());
+
+        turbo::ip_t ip1, ip2, ip3;
+        ASSERT_EQ(0, turbo::str2ip("192.168.0.1", &ip1));
+        ASSERT_EQ(0, turbo::str2ip("192.168.0.2", &ip2));
+        ip3 = ip1;
+        ASSERT_LT(ip1, ip2);
+        ASSERT_LE(ip1, ip2);
+        ASSERT_GT(ip2, ip1);
+        ASSERT_GE(ip2, ip1);
+        ASSERT_TRUE(ip1 != ip2);
+        ASSERT_FALSE(ip1 == ip2);
+        ASSERT_TRUE(ip1 == ip3);
+        ASSERT_FALSE(ip1 != ip3);
+    }
+
+    TEST(EndPointTest, show_local_info) {
+        KLOG(INFO) << "my_ip is " << turbo::my_ip() << std::endl
+                  << "my_ip_cstr is " << turbo::my_ip_cstr() << std::endl
+                  << "my_hostname is " << turbo::my_hostname();
+    }
+
+    TEST(EndPointTest, endpoint) {
+        turbo::EndPoint p1;
+        ASSERT_EQ(turbo::IP_ANY, p1.ip);
+        ASSERT_EQ(0, p1.port);
+
+        turbo::EndPoint p2(turbo::IP_NONE, -1);
+        ASSERT_EQ(turbo::IP_NONE, p2.ip);
+        ASSERT_EQ(-1, p2.port);
+
+        turbo::EndPoint p3;
+        ASSERT_EQ(-1, turbo::str2endpoint(" 127.0.0.1:-1", &p3));
+        ASSERT_EQ(-1, turbo::str2endpoint(" 127.0.0.1:65536", &p3));
+        ASSERT_EQ(0, turbo::str2endpoint(" 127.0.0.1:65535", &p3));
+        ASSERT_EQ(0, turbo::str2endpoint(" 127.0.0.1:0", &p3));
+
+        turbo::EndPoint p4;
+        ASSERT_EQ(0, turbo::str2endpoint(" 127.0.0.1: 289 ", &p4));
+        ASSERT_STREQ("127.0.0.1", turbo::ip2str(p4.ip).c_str());
+        ASSERT_EQ(289, p4.port);
+
+        turbo::EndPoint p5;
+        ASSERT_EQ(-1, hostname2endpoint("localhost:-1", &p5));
+        ASSERT_EQ(-1, hostname2endpoint("localhost:65536", &p5));
+        ASSERT_EQ(0, hostname2endpoint("localhost:65535", &p5)) << km_error();
+        ASSERT_EQ(0, hostname2endpoint("localhost:0", &p5));
+
+    }
+
+    TEST(EndPointTest, hash_table) {
+        turbo::hash_map<turbo::EndPoint, int> m;
+        turbo::EndPoint ep1(turbo::IP_ANY, 123);
+        turbo::EndPoint ep2(turbo::IP_ANY, 456);
+        ++m[ep1];
+        ASSERT_TRUE(m.find(ep1) != m.end());
+        ASSERT_EQ(1, m.find(ep1)->second);
+        ASSERT_EQ(1u, m.size());
+
+        ++m[ep1];
+        ASSERT_TRUE(m.find(ep1) != m.end());
+        ASSERT_EQ(2, m.find(ep1)->second);
+        ASSERT_EQ(1u, m.size());
+
+        ++m[ep2];
+        ASSERT_TRUE(m.find(ep2) != m.end());
+        ASSERT_EQ(1, m.find(ep2)->second);
+        ASSERT_EQ(2u, m.size());
+    }
+
+    TEST(EndPointTest, flat_map) {
+        turbo::FlatMap<turbo::EndPoint, int> m;
+        ASSERT_EQ(0, m.init(1024));
+        uint32_t port = 8088;
+
+        turbo::EndPoint ep1(turbo::IP_ANY, port);
+        turbo::EndPoint ep2(turbo::IP_ANY, port);
+        ++m[ep1];
+        ++m[ep2];
+        ASSERT_EQ(1u, m.size());
+
+        turbo::ip_t ip_addr;
+        turbo::str2ip("10.10.10.10", &ip_addr);
+        int ip = turbo::ip2int(ip_addr);
+
+        for (int i = 0; i < 1023; ++i) {
+            turbo::EndPoint ep(turbo::int2ip(++ip), port);
+            ++m[ep];
+        }
+
+        turbo::BucketInfo info = m.bucket_info();
+        KLOG(INFO) << "bucket info max long=" << info.longest_length
+                  << " avg=" << info.average_length << std::endl;
+        ASSERT_LT(info.longest_length, 32ul) << "detect hash collision and it's too large.";
+    }
+
+    void *server_proc(void *arg) {
+        int listen_fd = (int64_t) arg;
+        sockaddr_storage ss;
+        socklen_t len = sizeof(ss);
+        int fd = accept(listen_fd, (sockaddr *) &ss, &len);
+        return (void *) (int64_t) fd;
+    }
+
+    static void test_listen_connect(const std::string &server_addr, const std::string &exp_client_addr) {
+        turbo::EndPoint point;
+        ASSERT_EQ(0, turbo::str2endpoint(server_addr.c_str(), &point));
+        ASSERT_EQ(server_addr, turbo::endpoint2str(point).c_str());
+
+        int listen_fd = turbo::tcp_listen(point);
+        ASSERT_GT(listen_fd, 0);
+        pthread_t pid;
+        pthread_create(&pid, NULL, server_proc, (void *) (int64_t) listen_fd);
+
+        int fd = turbo::tcp_connect(point, NULL);
+        ASSERT_GT(fd, 0);
+
+        turbo::EndPoint point2;
+        ASSERT_EQ(0, turbo::get_local_side(fd, &point2));
+
+        std::string s = turbo::endpoint2str(point2).c_str();
+        if (turbo::get_endpoint_type(point2) == AF_UNIX) {
+            ASSERT_EQ(exp_client_addr, s);
+        } else {
+            ASSERT_EQ(exp_client_addr, s.substr(0, exp_client_addr.size()));
+        }
+        ASSERT_EQ(0, turbo::get_remote_side(fd, &point2));
+        ASSERT_EQ(server_addr, turbo::endpoint2str(point2).c_str());
+        close(fd);
+
+        void *ret = nullptr;
+        pthread_join(pid, &ret);
+        int server_fd = (int) (int64_t) ret;
+        ASSERT_GT(server_fd, 0);
+        close(server_fd);
+        close(listen_fd);
+    }
+
+    static void test_parse_and_serialize(const std::string &instr, const std::string &outstr) {
+        turbo::EndPoint ep;
+        ASSERT_EQ(0, turbo::str2endpoint(instr.c_str(), &ep));
+        turbo::EndPointStr s = turbo::endpoint2str(ep);
+        ASSERT_EQ(outstr, std::string(s.c_str()));
+    }
+
+    TEST(EndPointTest, ipv4) {
+        test_listen_connect("127.0.0.1:8787", "127.0.0.1:");
+    }
+
+    TEST(EndPointTest, ipv6) {
+        // FIXME: test environ may not support ipv6
+        // test_listen_connect("[::1]:8787", "[::1]:");
+
+        test_parse_and_serialize("[::1]:8080", "[::1]:8080");
+        test_parse_and_serialize("  [::1]:65535  ", "[::1]:65535");
+        test_parse_and_serialize("  [2001:0db8:a001:0002:0003:0ab9:C0A8:0102]:65535  ",
+                                 "[2001:db8:a001:2:3:ab9:c0a8:102]:65535");
+
+        turbo::EndPoint ep;
+        ASSERT_EQ(-1, turbo::str2endpoint("[2001:db8:1:2:3:ab9:c0a8:102]", &ep));
+        ASSERT_EQ(-1, turbo::str2endpoint("[2001:db8:1:2:3:ab9:c0a8:102]#654321", &ep));
+        ASSERT_EQ(-1, turbo::str2endpoint("ipv6:2001:db8:1:2:3:ab9:c0a8:102", &ep));
+        ASSERT_EQ(-1, turbo::str2endpoint("[", &ep));
+        ASSERT_EQ(-1, turbo::str2endpoint("[::1", &ep));
+        ASSERT_EQ(-1, turbo::str2endpoint("[]:80", &ep));
+        ASSERT_EQ(-1, turbo::str2endpoint("[]", &ep));
+        ASSERT_EQ(-1, turbo::str2endpoint("[]:", &ep));
+    }
+
+    TEST(EndPointTest, unix_socket) {
+        ::unlink("test.sock");
+        test_listen_connect("unix:test.sock", "unix:");
+        ::unlink("test.sock");
+
+        turbo::EndPoint point;
+        ASSERT_EQ(-1, turbo::str2endpoint("", &point));
+        ASSERT_EQ(-1, turbo::str2endpoint("a.sock", &point));
+        ASSERT_EQ(-1, turbo::str2endpoint("unix:", &point));
+        ASSERT_EQ(-1, turbo::str2endpoint(" unix: ", &point));
+        ASSERT_EQ(0, turbo::str2endpoint("unix://a.sock", 123, &point));
+        ASSERT_EQ(std::string("unix://a.sock"), turbo::endpoint2str(point).c_str());
+
+        std::string long_path = "unix:";
+        long_path.append(sizeof(sockaddr_un::sun_path) - 1, 'a');
+        ASSERT_EQ(0, turbo::str2endpoint(long_path.c_str(), &point));
+        ASSERT_EQ(long_path, turbo::endpoint2str(point).c_str());
+        long_path.push_back('a');
+        ASSERT_EQ(-1, turbo::str2endpoint(long_path.c_str(), &point));
+        char buf[128] = {0}; // braft use this size of buffer
+        size_t ret = snprintf(buf, sizeof(buf), "%s:%d", turbo::endpoint2str(point).c_str(), INT_MAX);
+        ASSERT_LT(ret, sizeof(buf) - 1);
+    }
+
+    TEST(EndPointTest, original_endpoint) {
+        turbo::EndPoint ep;
+        ASSERT_FALSE(ExtendedEndPoint::is_extended(ep));
+        ASSERT_EQ(NULL, ExtendedEndPoint::address(ep));
+
+        ASSERT_EQ(0, turbo::str2endpoint("1.2.3.4:5678", &ep));
+        ASSERT_FALSE(ExtendedEndPoint::is_extended(ep));
+        ASSERT_EQ(NULL, ExtendedEndPoint::address(ep));
+
+        // ctor & dtor
+        {
+            turbo::EndPoint ep2(ep);
+            ASSERT_FALSE(ExtendedEndPoint::is_extended(ep));
+            ASSERT_EQ(ep.ip, ep2.ip);
+            ASSERT_EQ(ep.port, ep2.port);
+        }
+
+        // assign
+        turbo::EndPoint ep2;
+        ep2 = ep;
+        ASSERT_EQ(ep.ip, ep2.ip);
+        ASSERT_EQ(ep.port, ep2.port);
+    }
+
+    TEST(EndPointTest, extended_endpoint) {
+        turbo::EndPoint ep;
+        ASSERT_EQ(0, turbo::str2endpoint("unix:sock.file", &ep));
+        ASSERT_TRUE(ExtendedEndPoint::is_extended(ep));
+        ExtendedEndPoint *eep = ExtendedEndPoint::address(ep);
+        ASSERT_TRUE(eep);
+        ASSERT_EQ(AF_UNIX, eep->family());
+        ASSERT_EQ(1, eep->_ref_count.load());
+
+        // copy ctor & dtor
+        {
+            turbo::EndPoint tmp(ep);
+            ASSERT_EQ(2, eep->_ref_count.load());
+            ASSERT_EQ(eep, ExtendedEndPoint::address(tmp));
+            ASSERT_EQ(eep, ExtendedEndPoint::address(ep));
+        }
+        ASSERT_EQ(1, eep->_ref_count.load());
+
+        turbo::EndPoint ep2;
+
+        // extended endpoint assigns to original endpoint
+        ep2 = ep;
+        ASSERT_EQ(2, eep->_ref_count.load());
+        ASSERT_EQ(eep, ExtendedEndPoint::address(ep2));
+
+        // original endpoint assigns to extended endpoint
+        ep2 = turbo::EndPoint();
+        ASSERT_EQ(1, eep->_ref_count.load());
+        ASSERT_FALSE(ExtendedEndPoint::is_extended(ep2));
+
+        // extended endpoint assigns to extended endpoint
+        ASSERT_EQ(0, turbo::str2endpoint("[::1]:2233", &ep2));
+        ExtendedEndPoint *eep2 = ExtendedEndPoint::address(ep2);
+        ASSERT_TRUE(eep2);
+        ep2 = ep;
+        // eep2 has been returned to resource pool, but we can still access it here unsafely.
+        ASSERT_EQ(0, eep2->_ref_count.load());
+        ASSERT_EQ(AF_UNSPEC, eep2->family());
+        ASSERT_EQ(2, eep->_ref_count.load());
+        ASSERT_EQ(eep, ExtendedEndPoint::address(ep));
+        ASSERT_EQ(eep, ExtendedEndPoint::address(ep2));
+
+        ASSERT_EQ(0, str2endpoint("[::1]:2233", &ep2));
+        ASSERT_EQ(1, eep->_ref_count.load());
+        eep2 = ExtendedEndPoint::address(ep2);
+        ASSERT_NE(eep, eep2);
+        ASSERT_EQ(1, eep2->_ref_count.load());
+    }
+
+    TEST(EndPointTest, endpoint_compare) {
+        turbo::EndPoint ep1, ep2, ep3;
+
+        ASSERT_EQ(0, turbo::str2endpoint("127.0.0.1:8080", &ep1));
+        ASSERT_EQ(0, turbo::str2endpoint("127.0.0.1:8080", &ep2));
+        ASSERT_EQ(0, turbo::str2endpoint("127.0.0.3:8080", &ep3));
+        ASSERT_EQ(ep1, ep2);
+        ASSERT_NE(ep1, ep3);
+
+        ASSERT_EQ(0, turbo::str2endpoint("unix:sock1.file", &ep1));
+        ASSERT_EQ(0, turbo::str2endpoint("unix:sock1.file", &ep2));
+        ASSERT_EQ(0, turbo::str2endpoint("unix:sock3.file", &ep3));
+        ASSERT_EQ(ep1, ep2);
+        ASSERT_NE(ep1, ep3);
+
+        ASSERT_EQ(0, turbo::str2endpoint("[::1]:2233", &ep1));
+        ASSERT_EQ(0, turbo::str2endpoint("[::1]:2233", &ep2));
+        ASSERT_EQ(0, turbo::str2endpoint("[::3]:2233", &ep3));
+        ASSERT_EQ(ep1, ep2);
+        ASSERT_NE(ep1, ep3);
+    }
+
+    TEST(EndPointTest, endpoint_sockaddr_conv_ipv4) {
+        turbo::EndPoint ep;
+        ASSERT_EQ(0, turbo::str2endpoint("1.2.3.4:8086", &ep));
+
+        in_addr expected_in_addr;
+        bzero(&expected_in_addr, sizeof(expected_in_addr));
+        expected_in_addr.s_addr = 0x04030201u;
+
+        sockaddr_storage ss;
+        sockaddr_in *in4 = (sockaddr_in *) &ss;
+
+        memset(&ss, 'a', sizeof(ss));
+        ASSERT_EQ(0, turbo::endpoint2sockaddr(ep, &ss));
+        ASSERT_EQ(AF_INET, ss.ss_family);
+        ASSERT_EQ(AF_INET, in4->sin_family);
+        in_port_t port = htons(8086);
+        ASSERT_EQ(port, in4->sin_port);
+        ASSERT_EQ(0, memcmp(&in4->sin_addr, &expected_in_addr, sizeof(expected_in_addr)));
+
+        sockaddr_storage ss2;
+        socklen_t ss2_size = 0;
+        memset(&ss2, 'b', sizeof(ss2));
+        ASSERT_EQ(0, turbo::endpoint2sockaddr(ep, &ss2, &ss2_size));
+        ASSERT_EQ(ss2_size, sizeof(*in4));
+        ASSERT_EQ(0, memcmp(&ss2, &ss, sizeof(ss)));
+
+        turbo::EndPoint ep2;
+        ASSERT_EQ(0, turbo::sockaddr2endpoint(&ss, sizeof(*in4), &ep2));
+        ASSERT_EQ(ep2, ep);
+
+        ASSERT_EQ(AF_INET, turbo::get_endpoint_type(ep));
+    }
+
+    TEST(EndPointTest, endpoint_sockaddr_conv_ipv6) {
+        turbo::EndPoint ep;
+        ASSERT_EQ(0, turbo::str2endpoint("[::1]:8086", &ep));
+
+        in6_addr expect_in6_addr;
+        bzero(&expect_in6_addr, sizeof(expect_in6_addr));
+        expect_in6_addr.s6_addr[15] = 1;
+
+        sockaddr_storage ss;
+        const sockaddr_in6 *sa6 = (sockaddr_in6 *) &ss;
+
+        memset(&ss, 'a', sizeof(ss));
+        ASSERT_EQ(0, turbo::endpoint2sockaddr(ep, &ss));
+        ASSERT_EQ(AF_INET6, ss.ss_family);
+        ASSERT_EQ(AF_INET6, sa6->sin6_family);
+        in_port_t port = htons(8086);
+        ASSERT_EQ(port, sa6->sin6_port);
+        ASSERT_EQ(0u, sa6->sin6_flowinfo);
+        ASSERT_EQ(0, memcmp(&expect_in6_addr, &sa6->sin6_addr, sizeof(in6_addr)));
+        ASSERT_EQ(0u, sa6->sin6_scope_id);
+
+        sockaddr_storage ss2;
+        socklen_t ss2_size = 0;
+        memset(&ss2, 'b', sizeof(ss2));
+        ASSERT_EQ(0, turbo::endpoint2sockaddr(ep, &ss2, &ss2_size));
+        ASSERT_EQ(ss2_size, sizeof(*sa6));
+        ASSERT_EQ(0, memcmp(&ss2, &ss, sizeof(ss)));
+
+        turbo::EndPoint ep2;
+        ASSERT_EQ(0, turbo::sockaddr2endpoint(&ss, sizeof(*sa6), &ep2));
+        ASSERT_STREQ("[::1]:8086", turbo::endpoint2str(ep2).c_str());
+
+        ASSERT_EQ(AF_INET6, turbo::get_endpoint_type(ep));
+    }
+
+    TEST(EndPointTest, endpoint_sockaddr_conv_unix) {
+        turbo::EndPoint ep;
+        ASSERT_EQ(0, turbo::str2endpoint("unix:sock.file", &ep));
+
+        sockaddr_storage ss;
+        const sockaddr_un *un = (sockaddr_un *) &ss;
+
+        memset(&ss, 'a', sizeof(ss));
+        ASSERT_EQ(0, turbo::endpoint2sockaddr(ep, &ss));
+        ASSERT_EQ(AF_UNIX, ss.ss_family);
+        ASSERT_EQ(AF_UNIX, un->sun_family);
+        ASSERT_EQ(0, memcmp("sock.file", un->sun_path, 10));
+
+        sockaddr_storage ss2;
+        socklen_t ss2_size = 0;
+        memset(&ss2, 'b', sizeof(ss2));
+        ASSERT_EQ(0, turbo::endpoint2sockaddr(ep, &ss2, &ss2_size));
+        ASSERT_EQ(offsetof(struct sockaddr_un, sun_path) + strlen("sock.file") + 1, ss2_size);
+        ASSERT_EQ(0, memcmp(&ss2, &ss, sizeof(ss)));
+
+        turbo::EndPoint ep2;
+        ASSERT_EQ(0, turbo::sockaddr2endpoint(&ss, sizeof(sa_family_t) + strlen(un->sun_path) + 1, &ep2));
+        ASSERT_STREQ("unix:sock.file", turbo::endpoint2str(ep2).c_str());
+
+        ASSERT_EQ(AF_UNIX, turbo::get_endpoint_type(ep));
+    }
+
+    void concurrent_proc(void *p) {
+        for (int i = 0; i < 10000; ++i) {
+            turbo::EndPoint ep;
+            std::string str("127.0.0.1:8080");
+            ASSERT_EQ(0, turbo::str2endpoint(str.c_str(), &ep));
+            ASSERT_EQ(str, turbo::endpoint2str(ep).c_str());
+
+            str.assign("[::1]:8080");
+            ASSERT_EQ(0, turbo::str2endpoint(str.c_str(), &ep));
+            ASSERT_EQ(str, turbo::endpoint2str(ep).c_str());
+
+            str.assign("unix:test.sock");
+            ASSERT_EQ(0, turbo::str2endpoint(str.c_str(), &ep));
+            ASSERT_EQ(str, turbo::endpoint2str(ep).c_str());
+        }
+        *(int *) p = 1;
+    }
+
+    TEST(EndPointTest, endpoint_concurrency) {
+        const int T = 5;
+        pthread_t tids[T];
+        int rets[T] = {0};
+        for (int i = 0; i < T; ++i) {
+            pthread_create(&tids[i], nullptr, [](void *p) {
+                concurrent_proc(p);
+                return (void *) nullptr;
+            }, &rets[i]);
+        }
+        for (int i = 0; i < T; ++i) {
+            pthread_join(tids[i], nullptr);
+            ASSERT_EQ(1, rets[i]);
+        }
+    }
+
+    const char *g_hostname = "baidu.com";
+
+    TEST(EndPointTest, tcp_connect) {
+        turbo::EndPoint ep;
+        ASSERT_EQ(0, turbo::hostname2endpoint(g_hostname, 80, &ep));
+        {
+            turbo::fd_guard sockfd(turbo::tcp_connect(ep, NULL));
+            ASSERT_LE(0, sockfd) << "errno=" << errno;
+        }
+        {
+            turbo::fd_guard sockfd(turbo::tcp_connect(ep, NULL, 1000));
+            ASSERT_LE(0, sockfd) << "errno=" << errno;
+        }
+        {
+            turbo::fd_guard sockfd(turbo::tcp_connect(ep, NULL, 1));
+            ASSERT_EQ(-1, sockfd) << "errno=" << errno;
+            ASSERT_EQ(ETIMEDOUT, errno);
+        }
+
+        {
+            struct sockaddr_storage serv_addr{};
+            socklen_t serv_addr_size = 0;
+            ASSERT_EQ(0, endpoint2sockaddr(ep, &serv_addr, &serv_addr_size));
+            turbo::fd_guard sockfd(socket(serv_addr.ss_family, SOCK_STREAM, 0));
+            ASSERT_LE(0, sockfd);
+            bool is_blocking = turbo::is_blocking(sockfd);
+            ASSERT_EQ(0, turbo::pthread_timed_connect(
+                    sockfd, (struct sockaddr *) &serv_addr, serv_addr_size, NULL));
+            ASSERT_EQ(is_blocking, turbo::is_blocking(sockfd));
+        }
+
+        {
+            struct sockaddr_storage serv_addr{};
+            socklen_t serv_addr_size = 0;
+            ASSERT_EQ(0, endpoint2sockaddr(ep, &serv_addr, &serv_addr_size));
+            turbo::fd_guard sockfd(socket(serv_addr.ss_family, SOCK_STREAM, 0));
+            ASSERT_LE(0, sockfd);
+            bool is_blocking = turbo::is_blocking(sockfd);
+            // In most cases, 1 millisecond will result in a connection timeout.
+            timespec abstime = turbo::Time::to_timespec(turbo::Time::future_time(turbo::Duration::milliseconds(1)));
+            const int rc = turbo::pthread_timed_connect(
+                    sockfd, (struct sockaddr *) &serv_addr,
+                    serv_addr_size, &abstime);
+            ASSERT_EQ(-1, rc);
+            ASSERT_EQ(ETIMEDOUT, errno);
+            ASSERT_EQ(is_blocking, turbo::is_blocking(sockfd));
+        }
+    }
+
+} // end of namespace

@@ -1,0 +1,290 @@
+// Copyright (C) 2024 Kumo inc.
+// Author: Jeff.li lijippy@163.com
+// All rights reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+#pragma once
+
+#include <turbo/log/logging.h>
+
+namespace turbo {
+
+    // [Create a on-stack small queue]
+    //   char storage[64];
+    //   turbo::BoundedQueue<int> q(storage, sizeof(storage), turbo::NOT_OWN_STORAGE);
+    //   q.push(1);
+    //   q.push(2);
+    //   ...
+
+    // [Initialize a class-member queue]
+    //   class Foo {
+    //     ...
+    //     BoundQueue<int> _queue;
+    //   };
+    //   int Foo::init() {
+    //     BoundedQueue<int> tmp(capacity);
+    //     if (!tmp.initialized()) {
+    //       KLOG(ERROR) << "Fail to create _queue";
+    //       return -1;
+    //     }
+    //     tmp.swap(_queue);
+    //   }
+
+    enum StorageOwnership {
+        OWNS_STORAGE, NOT_OWN_STORAGE
+    };
+
+    template<typename T>
+    class BoundedQueue {
+    public:
+        // You have to pass the memory for storing items at creation.
+        // The queue contains at most memsize/sizeof(T) items.
+        BoundedQueue(void *mem, size_t memsize, StorageOwnership ownership)
+                : _count(0), _cap(memsize / sizeof(T)), _start(0), _ownership(ownership), _items(mem) {
+            DKCHECK(_items);
+        };
+
+        // Construct a queue with the given capacity.
+        // The malloc() may fail silently, call initialized() to test validity
+        // of the queue.
+        explicit BoundedQueue(size_t capacity)
+                : _count(0), _cap(capacity), _start(0), _ownership(OWNS_STORAGE), _items(malloc(capacity * sizeof(T))) {
+            DKCHECK(_items);
+        };
+
+        BoundedQueue(const BoundedQueue&) = delete;
+        BoundedQueue& operator=(const BoundedQueue&) = delete;
+
+        BoundedQueue()
+                : _count(0), _cap(0), _start(0), _ownership(NOT_OWN_STORAGE), _items(nullptr) {
+        };
+
+        ~BoundedQueue() {
+            clear();
+            if (_ownership == OWNS_STORAGE) {
+                free(_items);
+                _items = nullptr;
+            }
+        }
+
+        // Push |item| into bottom side of this queue.
+        // Returns true on success, false if queue is full.
+        bool push(const T &item) {
+            if (_count < _cap) {
+                new((T *) _items + _mod(_start + _count, _cap)) T(item);
+                ++_count;
+                return true;
+            }
+            return false;
+        }
+
+        // Push |item| into bottom side of this queue. If the queue is full,
+        // pop topmost item first.
+        void elim_push(const T &item) {
+            if (_count < _cap) {
+                new((T *) _items + _mod(_start + _count, _cap)) T(item);
+                ++_count;
+            } else {
+                ((T *) _items)[_start] = item;
+                _start = _mod(_start + 1, _cap);
+            }
+        }
+
+        // Push a default-constructed item into bottom side of this queue
+        // Returns address of the item inside this queue
+        T *push() {
+            if (_count < _cap) {
+                return new((T *) _items + _mod(_start + _count++, _cap)) T();
+            }
+            return nullptr;
+        }
+
+        // Push |item| into top side of this queue
+        // Returns true on success, false if queue is full.
+        bool push_top(const T &item) {
+            if (_count < _cap) {
+                _start = _start ? (_start - 1) : (_cap - 1);
+                ++_count;
+                new((T *) _items + _start) T(item);
+                return true;
+            }
+            return false;
+        }
+
+        // Push a default-constructed item into top side of this queue
+        // Returns address of the item inside this queue
+        T *push_top() {
+            if (_count < _cap) {
+                _start = _start ? (_start - 1) : (_cap - 1);
+                ++_count;
+                return new((T *) _items + _start) T();
+            }
+            return nullptr;
+        }
+
+        // Pop top-most item from this queue
+        // Returns true on success, false if queue is empty
+        bool pop() {
+            if (_count) {
+                --_count;
+                ((T *) _items + _start)->~T();
+                _start = _mod(_start + 1, _cap);
+                return true;
+            }
+            return false;
+        }
+
+        // Pop top-most item from this queue and copy into |item|.
+        // Returns true on success, false if queue is empty
+        bool pop(T *item) {
+            if (_count) {
+                --_count;
+                T *const p = (T *) _items + _start;
+                *item = *p;
+                p->~T();
+                _start = _mod(_start + 1, _cap);
+                return true;
+            }
+            return false;
+        }
+
+        // Pop bottom-most item from this queue
+        // Returns true on success, false if queue is empty
+        bool pop_bottom() {
+            if (_count) {
+                --_count;
+                ((T *) _items + _mod(_start + _count, _cap))->~T();
+                return true;
+            }
+            return false;
+        }
+
+        // Pop bottom-most item from this queue and copy into |item|.
+        // Returns true on success, false if queue is empty
+        bool pop_bottom(T *item) {
+            if (_count) {
+                --_count;
+                T *const p = (T *) _items + _mod(_start + _count, _cap);
+                *item = *p;
+                p->~T();
+                return true;
+            }
+            return false;
+        }
+
+        // Pop all items
+        void clear() {
+            for (uint32_t i = 0; i < _count; ++i) {
+                ((T *) _items + _mod(_start + i, _cap))->~T();
+            }
+            _count = 0;
+            _start = 0;
+        }
+
+        // Get address of top-most item, nullptr if queue is empty
+        T *top() {
+            return _count ? ((T *) _items + _start) : nullptr;
+        }
+
+        const T *top() const {
+            return _count ? ((const T *) _items + _start) : nullptr;
+        }
+
+        // Randomly access item from top side.
+        // top(0) == top(), top(size()-1) == bottom()
+        // Returns nullptr if |index| is out of range.
+        T *top(size_t index) {
+            if (index < _count) {
+                return (T *) _items + _mod(_start + index, _cap);
+            }
+            return nullptr;   // including _count == 0
+        }
+
+        const T *top(size_t index) const {
+            if (index < _count) {
+                return (const T *) _items + _mod(_start + index, _cap);
+            }
+            return nullptr;   // including _count == 0
+        }
+
+        // Get address of bottom-most item, nullptr if queue is empty
+        T *bottom() {
+            return _count ? ((T *) _items + _mod(_start + _count - 1, _cap)) : nullptr;
+        }
+
+        const T *bottom() const {
+            return _count ? ((const T *) _items + _mod(_start + _count - 1, _cap)) : nullptr;
+        }
+
+        // Randomly access item from bottom side.
+        // bottom(0) == bottom(), bottom(size()-1) == top()
+        // Returns nullptr if |index| is out of range.
+        T *bottom(size_t index) {
+            if (index < _count) {
+                return (T *) _items + _mod(_start + _count - index - 1, _cap);
+            }
+            return nullptr;  // including _count == 0
+        }
+
+        const T *bottom(size_t index) const {
+            if (index < _count) {
+                return (const T *) _items + _mod(_start + _count - index - 1, _cap);
+            }
+            return nullptr;  // including _count == 0
+        }
+
+        bool empty() const { return !_count; }
+
+        bool full() const { return _cap == _count; }
+
+        // Number of items
+        size_t size() const { return _count; }
+
+        // Maximum number of items that can be in this queue
+        size_t capacity() const { return _cap; }
+
+        // Maximum value of capacity()
+        size_t max_capacity() const { return (1UL << (sizeof(_cap) * 8)) - 1; }
+
+        // True if the queue was constructed successfully.
+        bool initialized() const { return _items != nullptr; }
+
+        // Swap internal fields with another queue.
+        void swap(BoundedQueue &rhs) {
+            std::swap(_count, rhs._count);
+            std::swap(_cap, rhs._cap);
+            std::swap(_start, rhs._start);
+            std::swap(_ownership, rhs._ownership);
+            std::swap(_items, rhs._items);
+        }
+
+    private:
+        // This is faster than % in this queue because most |off| are smaller
+        // than |cap|. This is probably not true in other place, be careful
+        // before you use this trick.
+        static uint32_t _mod(uint32_t off, uint32_t cap) {
+            while (off >= cap) {
+                off -= cap;
+            }
+            return off;
+        }
+
+        uint32_t _count;
+        uint32_t _cap;
+        uint32_t _start;
+        StorageOwnership _ownership;
+        void *_items;
+    };
+
+}  // namespace

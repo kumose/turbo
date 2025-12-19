@@ -1,0 +1,209 @@
+// Copyright (C) 2024 Kumo inc.
+// Author: Jeff.li lijippy@163.com
+// All rights reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+#pragma once
+
+// WARNING: You should probably be using Thread (thread.h) instead.  Thread is
+//          Chrome's message-loop based Thread abstraction, and if you are a
+//          thread running in the browser, there will likely be assumptions
+//          that your thread will have an associated message loop.
+//
+// This is a simple thread interface that backs to a native operating system
+// thread.  You should use this only when you want a thread that does not have
+// an associated MessageLoop.  Unittesting is the best example of this.
+//
+// The simplest interface to use is DelegateSimpleThread, which will create
+// a new thread, and execute the Delegate's virtual Run() in this new thread
+// until it has completed, exiting the thread.
+//
+// NOTE: You *MUST* call Join on the thread to clean up the underlying thread
+// resources.  You are also responsible for destructing the SimpleThread object.
+// It is invalid to destroy a SimpleThread while it is running, or without
+// Start() having been called (and a thread never created).  The Delegate
+// object should live as long as a DelegateSimpleThread.
+//
+// Thread Safety: A SimpleThread is not completely thread safe.  It is safe to
+// access it from the creating thread or from the newly created thread.  This
+// implies that the creator thread should be the thread that calls Join.
+//
+// Example:
+//   class MyThreadRunner : public DelegateSimpleThread::Delegate { ... };
+//   MyThreadRunner runner;
+//   DelegateSimpleThread thread(&runner, "good_name_here");
+//   thread.Start();
+//   // Start will return after the Thread has been successfully started and
+//   // initialized.  The newly created thread will invoke runner->Run(), and
+//   // run until it returns.
+//   thread.Join();  // Wait until the thread has exited.  You *MUST* Join!
+//   // The SimpleThread object is still valid, however you may not call Join
+//   // or Start again.
+
+#include <string>
+#include <queue>
+#include <vector>
+#include <mutex>
+#include <turbo/base/macros.h>
+#include <turbo/threading/platform_thread.h>
+#include <turbo/threading/waitable_event.h>
+#include <turbo/base/macros.h>
+
+namespace turbo {
+
+    // This is the base SimpleThread.  You can derive from it and implement the
+    // virtual Run method, or you can use the DelegateSimpleThread interface.
+    class TURBO_EXPORT SimpleThread : public PlatformThread::Delegate {
+    public:
+        class TURBO_EXPORT Options {
+        public:
+            Options() : stack_size_(0) {}
+
+            ~Options() {}
+
+            // We use the standard compiler-supplied copy constructor.
+
+            // A custom stack size, or 0 for the system default.
+            void set_stack_size(size_t size) { stack_size_ = size; }
+
+            size_t stack_size() const { return stack_size_; }
+
+        private:
+            size_t stack_size_;
+        };
+
+        // Create a SimpleThread.  |options| should be used to manage any specific
+        // configuration involving the thread creation and management.
+        // Every thread has a name, in the form of |name_prefix|/TID, for example
+        // "my_thread/321".  The thread will not be created until Start() is called.
+        explicit SimpleThread(const std::string &name_prefix);
+
+        SimpleThread(const std::string &name_prefix, const Options &options);
+
+        virtual ~SimpleThread();
+
+        virtual void Start();
+
+        virtual void Join();
+
+        // Subclasses should override the Run method.
+        virtual void Run() = 0;
+
+        // Return the thread name prefix, or "unnamed" if none was supplied.
+        std::string name_prefix() { return name_prefix_; }
+
+        // Return the completed name including TID, only valid after Start().
+        std::string name() { return name_; }
+
+        // Return the thread id, only valid after Start().
+        PlatformThreadId tid() { return tid_; }
+
+        // Return True if Start() has ever been called.
+        bool HasBeenStarted();
+
+        // Return True if Join() has evern been called.
+        bool HasBeenJoined() { return joined_; }
+
+        // Overridden from PlatformThread::Delegate:
+        virtual void ThreadMain() override;
+
+        // Only set priorities with a careful understanding of the consequences.
+        // This is meant for very limited use cases.
+        void SetThreadPriority(ThreadPriority priority) {
+            PlatformThread::SetThreadPriority(thread_, priority);
+        }
+
+    private:
+        const std::string name_prefix_;
+        std::string name_;
+        const Options options_;
+        PlatformThreadHandle thread_;  // PlatformThread handle, invalid after Join!
+        WaitableEvent event_;          // Signaled if Start() was ever called.
+        PlatformThreadId tid_;         // The backing thread's id.
+        bool joined_;                  // True if Join has been called.
+    };
+
+    class TURBO_EXPORT DelegateSimpleThread : public SimpleThread {
+    public:
+        class TURBO_EXPORT Delegate {
+        public:
+            Delegate() {}
+
+            virtual ~Delegate() {}
+
+            virtual void Run() = 0;
+        };
+
+        DelegateSimpleThread(Delegate *delegate,
+                             const std::string &name_prefix);
+
+        DelegateSimpleThread(Delegate *delegate,
+                             const std::string &name_prefix,
+                             const Options &options);
+
+        virtual ~DelegateSimpleThread();
+
+        virtual void Run() override;
+
+    private:
+        Delegate *delegate_;
+    };
+
+    // DelegateSimpleThreadPool allows you to start up a fixed number of threads,
+    // and then add jobs which will be dispatched to the threads.  This is
+    // convenient when you have a lot of small work that you want done
+    // multi-threaded, but don't want to spawn a thread for each small bit of work.
+    //
+    // You just call AddWork() to add a delegate to the list of work to be done.
+    // JoinAll() will make sure that all outstanding work is processed, and wait
+    // for everything to finish.  You can reuse a pool, so you can call Start()
+    // again after you've called JoinAll().
+    class TURBO_EXPORT DelegateSimpleThreadPool
+            : public DelegateSimpleThread::Delegate {
+    public:
+        typedef DelegateSimpleThread::Delegate Delegate;
+
+        DelegateSimpleThreadPool(const std::string &name_prefix, int num_threads);
+
+        virtual ~DelegateSimpleThreadPool();
+
+        // Start up all of the underlying threads, and start processing work if we
+        // have any.
+        void Start();
+
+        // Make sure all outstanding work is finished, and wait for and destroy all
+        // of the underlying threads in the pool.
+        void JoinAll();
+
+        // It is safe to AddWork() any time, before or after Start().
+        // Delegate* should always be a valid pointer, nullptr is reserved internally.
+        void AddWork(Delegate *work, int repeat_count);
+
+        void AddWork(Delegate *work) {
+            AddWork(work, 1);
+        }
+
+        // We implement the Delegate interface, for running our internal threads.
+        virtual void Run() override;
+
+    private:
+        const std::string name_prefix_;
+        int num_threads_;
+        std::vector<DelegateSimpleThread *> threads_;
+        std::queue<Delegate *> delegates_;
+        std::mutex lock_;            // Locks delegates_
+        WaitableEvent dry_;    // Not signaled when there is no work to do.
+    };
+
+}  // namespace turbo

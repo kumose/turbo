@@ -1,0 +1,129 @@
+// Copyright (C) 2024 Kumo inc.
+// Author: Jeff.li lijippy@163.com
+// All rights reserved.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published
+// by the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+
+#include <turbo/threading/platform_thread.h>
+
+#include <errno.h>
+#include <sched.h>
+#include <turbo/log/logging.h>
+#include <turbo/base/internal/safe_strerror_posix.h>
+#include <turbo/threading/thread_id_name_manager.h>
+#include <turbo/threading/thread_restrictions.h>
+
+#if !defined(OS_NACL)
+#include <sys/prctl.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
+#include <sys/time.h>
+#include <unistd.h>
+#endif
+
+namespace turbo {
+
+namespace {
+
+int ThreadNiceValue(ThreadPriority priority) {
+  switch (priority) {
+    case kThreadPriority_RealtimeAudio:
+      return -10;
+    case kThreadPriority_Background:
+      return 10;
+    case kThreadPriority_Normal:
+      return 0;
+    case kThreadPriority_Display:
+      return -6;
+    default:
+      KLOG(FATAL) << "Unknown priority.";
+      return 0;
+  }
+}
+
+}  // namespace
+
+// NOTE: PR_SET_NAME was added in 2.6.9, should be working on most of
+// our machines, but missing from our linux headers.
+#if !defined(PR_SET_NAME)
+#define PR_SET_NAME 15
+#endif
+
+// static
+void PlatformThread::SetName(const char* name) {
+  ThreadIdNameManager::GetInstance()->SetName(CurrentId(), name);
+
+#if !defined(OS_NACL)
+  // On linux we can get the thread names to show up in the debugger by setting
+  // the process name for the LWP.  We don't want to do this for the main
+  // thread because that would rename the process, causing tools like killall
+  // to stop working.
+  if (PlatformThread::CurrentId() == getpid())
+    return;
+
+  // http://0pointer.de/blog/projects/name-your-threads.html
+  // Set the name for the LWP (which gets truncated to 15 characters).
+  // Note that glibc also has a 'pthread_setname_np' api, but it may not be
+  // available everywhere and it's only benefit over using prctl directly is
+  // that it can set the name of threads other than the current thread.
+  int err = prctl(PR_SET_NAME, name);
+  // We expect EPERM failures in sandboxed processes, just ignore those.
+  if (err < 0 && errno != EPERM)
+    DKLOG(ERROR) << "prctl(PR_SET_NAME)";
+#endif  //  !defined(OS_NACL)
+}
+
+// static
+void PlatformThread::SetThreadPriority(PlatformThreadHandle handle,
+                                       ThreadPriority priority) {
+#if !defined(OS_NACL)
+  if (priority == kThreadPriority_RealtimeAudio) {
+    const struct sched_param kRealTimePrio = { 8 };
+    if (pthread_setschedparam(pthread_self(), SCHED_RR, &kRealTimePrio) == 0) {
+      // Got real time priority, no need to set nice level.
+      return;
+    }
+  }
+
+  // setpriority(2) will set a thread's priority if it is passed a tid as
+  // the 'process identifier', not affecting the rest of the threads in the
+  // process. Setting this priority will only succeed if the user has been
+  // granted permission to adjust nice values on the system.
+  DKCHECK_NE(handle.id_, kInvalidThreadId);
+  const int kNiceSetting = ThreadNiceValue(priority);
+  if (setpriority(PRIO_PROCESS, handle.id_, kNiceSetting)) {
+    DVKLOG(1) << "Failed to set nice value of thread ("
+              << handle.id_ << ") to " << kNiceSetting;
+  }
+#endif  //  !defined(OS_NACL)
+}
+
+void InitThreading() {}
+
+void InitOnThread() {}
+
+void TerminateOnThread() {}
+
+size_t GetDefaultThreadStackSize(const pthread_attr_t& attributes) {
+#if !defined(THREAD_SANITIZER) && !defined(MEMORY_SANITIZER)
+  return 0;
+#else
+  // ThreadSanitizer bloats the stack heavily. Evidence has been that the
+  // default stack size isn't enough for some browser tests.
+  // MemorySanitizer needs this as a temporary fix for http://crbug.com/353687
+  return 2 * (1 << 23);  // 2 times 8192K (the default stack size on Linux).
+#endif
+}
+
+}  // namespace turbo
