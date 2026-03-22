@@ -23,7 +23,6 @@
 #include <type_traits>
 
 #include <turbo/base/internal/invoke.h>
-#include <turbo/functional/any_invocable.h>
 #include <turbo/meta/type_traits.h>
 
 namespace turbo {
@@ -94,11 +93,6 @@ void AssertNonNull(const std::function<Sig>& f) {
   (void)f;
 }
 
-template <typename Sig>
-void AssertNonNull(const AnyInvocable<Sig>& f) {
-  assert(f != nullptr);
-  (void)f;
-}
 
 template <typename F>
 void AssertNonNull(const F&) {}

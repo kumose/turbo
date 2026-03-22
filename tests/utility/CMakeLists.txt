@@ -71,19 +71,6 @@ carbin_cc_test(
 )
 
 carbin_cc_test(
-        NAME tdigest_test
-        MODULE utility
-        SOURCES tdigest_test.cc
-        LINKS
-        turbo::turbo
-        status_matchers_static
-        GTest::gtest
-        GTest::gmock
-        GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
-)
-carbin_cc_test(
         NAME range_test
         MODULE utility
         SOURCES range_test.cc

@@ -17,7 +17,6 @@
 #
 
 set(FUNCTIONAL_TEST_SRC
-        any_invocable_test
         bind_front_test
         function_ref_test
         overload_test

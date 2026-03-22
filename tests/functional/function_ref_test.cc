@@ -23,7 +23,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <tests/container/test_instance_tracker.h>
-#include <turbo/functional/any_invocable.h>
 #include <turbo/memory/memory.h>
 
 namespace turbo {
@@ -174,15 +173,6 @@ TEST(FunctionRef, NullStdFunctionAssertPasses) {
 TEST(FunctionRef, NullStdFunctionAssertFails) {
   std::function<void()> function = nullptr;
   EXPECT_DEBUG_DEATH({ FunctionRef<void()> ref(function); }, "");
-}
-
-TEST(FunctionRef, NullAnyInvocableAssertPasses) {
-  AnyInvocable<void() const> invocable = []() {};
-  FunctionRef<void()> ref(invocable);
-}
-TEST(FunctionRef, NullAnyInvocableAssertFails) {
-  AnyInvocable<void() const> invocable = nullptr;
-  EXPECT_DEBUG_DEATH({ FunctionRef<void()> ref(invocable); }, "");
 }
 
 #endif  // GTEST_HAS_DEATH_TEST

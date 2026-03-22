@@ -27,7 +27,6 @@
 #include <vector>
 
 #include <turbo/base/thread_annotations.h>
-#include <turbo/functional/any_invocable.h>
 #include <turbo/synchronization/mutex.h>
 
 namespace turbo {
@@ -60,7 +59,7 @@ class ThreadPool {
   }
 
   // Schedule a function to be run on a ThreadPool thread immediately.
-  void Schedule(turbo::AnyInvocable<void()> func) {
+  void Schedule(std::function<void()> func) {
     assert(func != nullptr);
     turbo::MutexLock l(&mu_);
     queue_.push(std::move(func));
@@ -73,7 +72,7 @@ class ThreadPool {
 
   void WorkLoop() {
     while (true) {
-      turbo::AnyInvocable<void()> func;
+      std::function<void()> func;
       {
         turbo::MutexLock l(&mu_);
         mu_.Await(turbo::Condition(this, &ThreadPool::WorkAvailable));
@@ -88,7 +87,7 @@ class ThreadPool {
   }
 
   turbo::Mutex mu_;
-  std::queue<turbo::AnyInvocable<void()>> queue_ TURBO_GUARDED_BY(mu_);
+  std::queue<std::function<void()>> queue_ TURBO_GUARDED_BY(mu_);
   std::vector<std::thread> threads_;
 };
 
