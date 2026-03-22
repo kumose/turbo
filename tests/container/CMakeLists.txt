@@ -1,22 +1,19 @@
+# Copyright (C) Kumo inc. and its affiliates.
 #
-# Copyright (C) 2024 EA group inc.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME hash_generator_testing
         SOURCES hash_generator_testing.cc
@@ -24,7 +21,7 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
 
@@ -49,7 +46,7 @@ set(CONTAINER_SRC_LIST
 )
 
 foreach (SRC ${CONTAINER_SRC_LIST})
-    carbin_cc_test(
+    kmcmake_cc_test(
             NAME ${SRC}
             MODULE container
             SOURCES ${SRC}.cc
@@ -59,12 +56,12 @@ foreach (SRC ${CONTAINER_SRC_LIST})
             GTest::gmock
             hash_generator_testing_static
             GTest::gmock_main
-            ${CARBIN_DEPS_LINK}
-            CXXOPTS ${CARBIN_CXX_OPTIONS}
+            ${KMCMAKE_DEPS_LINK}
+            CXXOPTS ${KMCMAKE_CXX_OPTIONS}
     )
 endforeach ()
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME btree_test_lib
         SOURCES btree_test.cc
@@ -72,10 +69,10 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME test_instance_tracker
         SOURCES test_instance_tracker.cc
@@ -83,11 +80,11 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME node_hash_set_test
         MODULE container
         SOURCES node_hash_set_test.cc
@@ -97,11 +94,11 @@ carbin_cc_test(
         GTest::gmock
         GTest::gmock_main
         hash_generator_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME inlined_vector_test
         MODULE container
         SOURCES inlined_vector_test.cc
@@ -114,11 +111,11 @@ carbin_cc_test(
         GTest::gmock_main
         test_instance_tracker_static
         exception_safety_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME fixed_array_exception_safety_test
         MODULE container
         SOURCES fixed_array_exception_safety_test.cc
@@ -131,11 +128,11 @@ carbin_cc_test(
         GTest::gmock_main
         test_instance_tracker_static
         exception_safety_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME inlined_vector_exception_safety_test
         MODULE container
         SOURCES inlined_vector_exception_safety_test.cc
@@ -148,11 +145,11 @@ carbin_cc_test(
         GTest::gmock_main
         test_instance_tracker_static
         exception_safety_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME compressed_tuple_test
         MODULE container
         SOURCES compressed_tuple_test.cc
@@ -162,11 +159,11 @@ carbin_cc_test(
         GTest::gmock
         GTest::gmock_main
         test_instance_tracker_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME container_memory_test
         MODULE container
         SOURCES container_memory_test.cc
@@ -176,12 +173,12 @@ carbin_cc_test(
         GTest::gmock
         test_instance_tracker_static
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME flat_hash_map_test
         MODULE container
         SOURCES flat_hash_map_test.cc
@@ -191,10 +188,10 @@ carbin_cc_test(
         GTest::gmock
         GTest::gmock_main
         hash_generator_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
-carbin_cc_test(
+kmcmake_cc_test(
         NAME test_instance_tracker_test
         MODULE container
         SOURCES test_instance_tracker_test.cc
@@ -204,11 +201,11 @@ carbin_cc_test(
         GTest::gmock
         GTest::gmock_main
         test_instance_tracker_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME flat_hash_set_test
         MODULE container
         SOURCES flat_hash_set_test.cc
@@ -218,11 +215,11 @@ carbin_cc_test(
         GTest::gmock
         GTest::gmock_main
         hash_generator_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME small_vector_test
         MODULE container
         SOURCES small_vector_test.cc
@@ -231,11 +228,11 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME linked_list_test
         MODULE container
         SOURCES linked_list_test.cc
@@ -244,11 +241,11 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME bounded_queue_test
         MODULE container
         SOURCES bounded_queue_test.cc
@@ -257,11 +254,11 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS} "-DUNORDERED_SET_CXX17"
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME flat_map_test
         MODULE container
         SOURCES flat_map_test.cc
@@ -274,7 +271,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME hash_tables_test
         MODULE container
         SOURCES hash_tables_test.cc
@@ -287,7 +284,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME mpsc_queue_test
         MODULE container
         SOURCES mpsc_queue_test.cc

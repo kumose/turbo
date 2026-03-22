@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME file_test
         MODULE files
         SOURCES file_test.cc
@@ -27,7 +27,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME file_watcher_test
         MODULE files
         SOURCES file_watcher_test.cc
@@ -40,7 +40,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME temp_file_test
         MODULE files
         SOURCES temp_file_test.cc
@@ -53,7 +53,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME io_util_test
         MODULE files
         SOURCES io_util_test.cc

@@ -46,7 +46,7 @@ class CMakeStyle(object):
     return "\n".join((("# " + line).strip() for line in file_header_lines()))
 
   def filename(self):
-    return "carbin_generated_copts.cmake"
+    return "kmcmake_generated_copts.cmake"
 
 
 class StarlarkStyle(object):
@@ -67,7 +67,7 @@ class StarlarkStyle(object):
         flatten(file_header_lines(), [docstring_quotes]))
 
   def filename(self):
-    return "carbin_generated_copts.bzl"
+    return "kmcmake_generated_copts.bzl"
 
 
 def copt_list(name, arg_list, style):

@@ -1,23 +1,18 @@
+// Copyright (C) 2026 Kumo inc. and its affiliates. All Rights Reserved.
 //
-// Copyright (C) 2024 EA group inc.
-// Author: Jeff.li lijippy@163.com
-// All rights reserved.
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
-//
-// Created by jeff on 24-6-6.
-//
+
 #pragma once
 
 // project name version
@@ -29,10 +24,10 @@
 #define @PROJECT_NAME_UP@_VERSION_STRING "@PROJECT_VERSION@"
 
 // build system
-#define @PROJECT_NAME_UP@_BUILD_SYSTEM "@LC_CARBIN_PRETTY_NAME@"
+#define @PROJECT_NAME_UP@_BUILD_SYSTEM "@LC_KMCMAKE_PRETTY_NAME@"
 
 // build system version
-#define @PROJECT_NAME_UP@_BUILD_SYSTEM_VERSION "@CARBIN_DISTRO_VERSION_ID@"
+#define @PROJECT_NAME_UP@_BUILD_SYSTEM_VERSION "@KMCMAKE_DISTRO_VERSION_ID@"
 
 
 // compiler gnu or clang
@@ -45,7 +40,7 @@
 #define @PROJECT_NAME_UP@_CMAKE_CXX_COMPILER_FLAGS "@CMAKE_CXX_COMPILER_FLAGS@"
 
 // user defined cxx compiler flags
-#define @PROJECT_NAME_UP@_CXX_COMPILER_FLAGS "@CARBIN_CXX_OPTIONS@"
+#define @PROJECT_NAME_UP@_CXX_COMPILER_FLAGS "@KMCMAKE_CXX_OPTIONS@"
 
 // cxx standard
 #define @PROJECT_NAME_UP@_CXX_STANDARD "@CMAKE_CXX_STANDARD@"
@@ -62,3 +57,30 @@
 #else
     #define IS_@PROJECT_NAME_UP@_BUILD_TYPE_DEBUG 0
 #endif
+
+////////////////////////////////////////////////////////////////////////////////
+/// simd region
+
+#define KMCMAKE_SIMD_LEVEL_NONE @KMCMAKE_SIMD_LEVEL_NONE_VAL@
+#define KMCMAKE_SIMD_LEVEL_SSE @KMCMAKE_SIMD_LEVEL_SSE_VAL@
+#define KMCMAKE_SIMD_LEVEL_AVX @KMCMAKE_SIMD_LEVEL_AVX_VAL@
+#define KMCMAKE_SIMD_LEVEL_AVX2 @KMCMAKE_SIMD_LEVEL_AVX2_VAL@
+#define KMCMAKE_SIMD_LEVEL_BMI @KMCMAKE_SIMD_LEVEL_BMI_VAL@
+#define KMCMAKE_SIMD_LEVEL_BMI2 @KMCMAKE_SIMD_LEVEL_BMI2_VAL@
+#define KMCMAKE_SIMD_LEVEL_FMA @KMCMAKE_SIMD_LEVEL_FMA_VAL@
+#define KMCMAKE_SIMD_LEVEL_MOVBE @KMCMAKE_SIMD_LEVEL_MOVBE_VAL@
+
+///////////////////////////////////////////////////////////////////////////////////
+/// git and version region
+
+////////////////////////////////////////////////////////////////////////////////
+/// Git Version Information
+////////////////////////////////////////////////////////////////////////////////
+// Full Git commit hash (e.g., "a1b2c3d4e5f67890abcdef1234567890abcdef12")
+#define @PROJECT_NAME_UP@_GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
+// Short Git commit hash (e.g., "a1b2c3d")
+#define @PROJECT_NAME_UP@_GIT_COMMIT_SHORT_HASH "@GIT_COMMIT_SHORT_HASH@"
+// Git dirty flag (0 = clean working tree, 1 = uncommitted changes)
+#define @PROJECT_NAME_UP@_GIT_IS_DIRTY @GIT_IS_DIRTY@
+// Combined Git version string (e.g., "0.6.0-a1b2c3d" or "0.6.0-a1b2c3d-dirty")
+#define @PROJECT_NAME_UP@_GIT_VERSION_STRING "@GIT_VERSION_STRING@"

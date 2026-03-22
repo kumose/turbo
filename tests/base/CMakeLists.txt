@@ -1,22 +1,19 @@
+# Copyright (C) Kumo inc. and its affiliates.
 #
-# Copyright (C) 2024 EA group inc.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME atomic_hook_test
         MODULE base
         SOURCES atomic_hook_test.cc atomic_hook_test_helper.h atomic_hook_test_helper.cc
@@ -25,12 +22,12 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
+        ${KMCMAKE_DEPS_LINK}
         CXXOPTS
-        ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME bit_cast_test
         MODULE base
         SOURCES bit_cast_test.cc
@@ -39,11 +36,11 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME call_once_test
         MODULE base
         SOURCES call_once_test.cc
@@ -52,18 +49,18 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME cmake_thread_test
         MODULE base
         SOURCES cmake_thread_test.cc
         LINKS
         turbo::turbo
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 set(BASE_SRC_LIST
         config_test
@@ -88,7 +85,7 @@ set(BASE_SRC_LIST
 )
 
 foreach (SRC ${BASE_SRC_LIST})
-    carbin_cc_test(
+    kmcmake_cc_test(
             NAME ${SRC}
             MODULE base
             SOURCES ${SRC}.cc
@@ -97,12 +94,12 @@ foreach (SRC ${BASE_SRC_LIST})
             GTest::gtest
             GTest::gmock
             GTest::gmock_main
-            ${CARBIN_DEPS_LINK}
-            CXXOPTS ${CARBIN_CXX_OPTIONS}
+            ${KMCMAKE_DEPS_LINK}
+            CXXOPTS ${KMCMAKE_CXX_OPTIONS}
     )
 endforeach ()
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME exception_safety_testing
         SOURCES exception_safety_testing.cc
@@ -111,10 +108,10 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME exception_safety_testing_test
         MODULE base
         SOURCES exception_safety_testing_test.cc
@@ -124,11 +121,11 @@ carbin_cc_test(
         GTest::gmock
         GTest::gmock_main
         exception_safety_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME inline_variable_test_a
         SOURCES inline_variable_test_a.cc
@@ -136,10 +133,10 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME inline_variable_test_b
         SOURCES inline_variable_test_b.cc
@@ -147,10 +144,10 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME inline_variable_test
         MODULE base
         SOURCES inline_variable_test.cc
@@ -162,10 +159,10 @@ carbin_cc_test(
         GTest::gmock
         GTest::gmock_main
         exception_safety_testing_static
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
-carbin_cc_test(
+kmcmake_cc_test(
         NAME checked_cast_test
         MODULE base
         SOURCES checked_cast_test.cc
@@ -174,11 +171,11 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME class_name_test
         MODULE base
         SOURCES class_name_test.cc
@@ -187,11 +184,11 @@ carbin_cc_test(
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-        ${CARBIN_DEPS_LINK}
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        ${KMCMAKE_DEPS_LINK}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME cacheline_test
         MODULE base
         SOURCES cacheline_test.cc
@@ -202,7 +199,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME endpoint_test
         MODULE base
         SOURCES endpoint_test.cc
@@ -215,7 +212,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME at_exit_test
         MODULE base
         SOURCES at_exit_test.cc
@@ -228,7 +225,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME bits_test
         MODULE base
         SOURCES bits_test.cc
@@ -241,7 +238,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME fd_guard_test
         MODULE base
         SOURCES fd_guard_test.cc
@@ -254,7 +251,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME popen_test
         MODULE base
         SOURCES popen_test.cc
@@ -267,7 +264,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME scoped_clear_errno_test
         MODULE base
         SOURCES scoped_clear_errno_test.cc
@@ -280,7 +277,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME scoped_generic_test
         MODULE base
         SOURCES scoped_generic_test.cc
@@ -293,7 +290,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME synchronous_event_test
         MODULE base
         SOURCES synchronous_event_test.cc

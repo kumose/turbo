@@ -1,22 +1,19 @@
+# Copyright (C) Kumo inc. and its affiliates.
 #
-# Copyright (C) 2024 EA group inc.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME bm_test_util
         SOURCES ${PROJECT_SOURCE_DIR}/tests/times/test_util.cc ${PROJECT_SOURCE_DIR}/tests/times/test_util.h
@@ -24,54 +21,54 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_bm(
+kmcmake_cc_bm(
         NAME cctz_benchmark
         MODULE times
         SOURCES cctz_benchmark.cc
-        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${CARBIN_DEPS_LINK}
+        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${KMCMAKE_DEPS_LINK}
         CXXOPTS ${USER_CXX_FLAGS}
 )
 
-carbin_cc_bm(
+kmcmake_cc_bm(
         NAME civil_time_benchmark
         MODULE times
         SOURCES civil_time_benchmark.cc
-        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${CARBIN_DEPS_LINK}
+        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${KMCMAKE_DEPS_LINK}
         CXXOPTS ${USER_CXX_FLAGS}
 )
 
-carbin_cc_bm(
+kmcmake_cc_bm(
         NAME clock_benchmark
         MODULE times
         SOURCES clock_benchmark.cc
-        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${CARBIN_DEPS_LINK}
+        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${KMCMAKE_DEPS_LINK}
         CXXOPTS ${USER_CXX_FLAGS}
 )
-carbin_cc_bm(
+kmcmake_cc_bm(
         NAME duration_benchmark
         MODULE times
         SOURCES duration_benchmark.cc
-        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${CARBIN_DEPS_LINK}
+        LINKS turbo::turbo benchmark::benchmark benchmark::benchmark_main ${KMCMAKE_DEPS_LINK}
         CXXOPTS ${USER_CXX_FLAGS}
 )
 
-carbin_cc_bm(
+kmcmake_cc_bm(
         NAME format_benchmark
         MODULE times
         SOURCES format_benchmark.cc
         LINKS
         turbo::turbo bm_test_util_static
-        benchmark::benchmark benchmark::benchmark_main ${CARBIN_DEPS_LINK}
+        benchmark::benchmark benchmark::benchmark_main ${KMCMAKE_DEPS_LINK}
         CXXOPTS ${USER_CXX_FLAGS}
 )
 
-carbin_cc_bm(
+kmcmake_cc_bm(
         NAME time_benchmark
         MODULE times
         SOURCES time_benchmark.cc
-        LINKS turbo::turbo benchmark::benchmark bm_test_util_static benchmark::benchmark_main ${CARBIN_DEPS_LINK}
+        LINKS turbo::turbo benchmark::benchmark bm_test_util_static benchmark::benchmark_main ${KMCMAKE_DEPS_LINK}
         CXXOPTS ${USER_CXX_FLAGS}
 )

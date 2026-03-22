@@ -1,14 +1,14 @@
-"""carbin compiler options.
+"""kmcmake compiler options.
 
-This is the source of truth for carbin compiler options.  To modify carbin
+This is the source of truth for kmcmake compiler options.  To modify kmcmake
 compilation options:
 
   (1) Edit the appropriate list in this file based on the platform the flag is
       needed on.
-  (2) Run `<path_to_carbin>/copts/generate_copts.py`.
+  (2) Run `<path_to_kmcmake>/copts/generate_copts.py`.
 
 The generated copts are consumed by configure_copts.bzl and
-CarbinConfigureCopts.cmake.
+KumoConfigureCopts.cmake.
 """
 
 # /Wall with msvc includes unhelpful warnings such as C4711, C4710, ...
@@ -49,7 +49,7 @@ MSVC_DEFINES = [
 ]
 
 COPT_VARS = {
-    "CARBIN_GCC_FLAGS": [
+    "KMCMAKE_GCC_FLAGS": [
         "-Wall",
         "-Wextra",
         "-Wcast-qual",
@@ -68,7 +68,7 @@ COPT_VARS = {
         # Don't define min and max macros (Build on Windows using gcc)
         "-DNOMINMAX",
     ],
-    "CARBIN_GCC_TEST_FLAGS": [
+    "KMCMAKE_GCC_TEST_FLAGS": [
         "-Wno-conversion-null",
         "-Wno-deprecated-declarations",
         "-Wno-missing-declarations",
@@ -77,7 +77,7 @@ COPT_VARS = {
         "-Wno-unused-parameter",
         "-Wno-unused-private-field",
     ],
-    "CARBIN_LLVM_FLAGS": [
+    "KMCMAKE_LLVM_FLAGS": [
         "-Wall",
         "-Wextra",
         "-Wcast-qual",
@@ -115,13 +115,13 @@ COPT_VARS = {
         # Don't define min and max macros (Build on Windows using clang)
         "-DNOMINMAX",
     ],
-    "CARBIN_LLVM_TEST_FLAGS":
+    "KMCMAKE_LLVM_TEST_FLAGS":
         LLVM_TEST_DISABLE_WARNINGS_FLAGS,
-    "CARBIN_CLANG_CL_FLAGS":
+    "KMCMAKE_CLANG_CL_FLAGS":
         (MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES),
-    "CARBIN_CLANG_CL_TEST_FLAGS":
+    "KMCMAKE_CLANG_CL_TEST_FLAGS":
         LLVM_TEST_DISABLE_WARNINGS_FLAGS,
-    "CARBIN_MSVC_FLAGS":
+    "KMCMAKE_MSVC_FLAGS":
         MSVC_BIG_WARNING_FLAGS + MSVC_DEFINES + [
             # Increase the number of sections available in object files
             "/bigobj",
@@ -138,14 +138,14 @@ COPT_VARS = {
             # forcing value to bool 'true' or 'false' (performance warning)
             "/wd4800",
         ],
-    "CARBIN_MSVC_TEST_FLAGS": [
+    "KMCMAKE_MSVC_TEST_FLAGS": [
         "/wd4018",  # signed/unsigned mismatch
         "/wd4101",  # unreferenced local variable
         "/wd4503",  # decorated name length exceeded, name was truncated
         "/wd4996",  # use of deprecated symbol
         "/DNOMINMAX",  # disable the min() and max() macros from <windows.h>
     ],
-    "CARBIN_MSVC_LINKOPTS": [
+    "KMCMAKE_MSVC_LINKOPTS": [
         # Object file doesn't export any previously undefined symbols
         "-ignore:4221",
     ],
@@ -153,11 +153,11 @@ COPT_VARS = {
     # Standard). These flags are used for detecting whether or not the target
     # architecture has hardware support for AES instructions which can be used
     # to improve performance of some random bit generators.
-    "CARBIN_RANDOM_HWAES_ARM64_FLAGS": ["-march=armv8-a+crypto"],
-    "CARBIN_RANDOM_HWAES_ARM32_FLAGS": ["-mfpu=neon"],
-    "CARBIN_RANDOM_HWAES_X64_FLAGS": [
+    "KMCMAKE_RANDOM_HWAES_ARM64_FLAGS": ["-march=armv8-a+crypto"],
+    "KMCMAKE_RANDOM_HWAES_ARM32_FLAGS": ["-mfpu=neon"],
+    "KMCMAKE_RANDOM_HWAES_X64_FLAGS": [
         "-maes",
         "-msse4.1",
     ],
-    "CARBIN_RANDOM_HWAES_MSVC_X64_FLAGS": [],
+    "KMCMAKE_RANDOM_HWAES_MSVC_X64_FLAGS": [],
 }

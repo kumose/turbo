@@ -1,108 +1,82 @@
-turbo * c++ 基础库
-====
+turbo
+=============================
 
-<div align="center">
-<img src=docs/images/kumo_logo.svg width=240 height=200 />
-</div>
+[中文版](README_CN.md)
 
-Turbo 是基于c++17标准的c++基础库，是Kumo产品的基础设施。Turbo是团队在经过数年在搜索、服务端
-开发积累的一套基础库，应用于数万个应用的稳定基础。
 
-# 构建
+Turbo is a C++ basic library developed in compliance with the C++17 standard,
+serving as the fundamental infrastructure for the Kumo product. Built and refined
+over years of hands-on experience in search and server-side development by the
+team, Turbo has been proven stable and reliable in tens of thousands of applications.
 
-* gcc/g++ >= 9.3
-* cmake >=3.24.3
-Turbo没有第三方依赖，直接下载编译即可。
+turbo is the fundamental of `kumo`, it serves with no dependencies, stability is the most
+import, secondary is performance.
+
+It will carefully to add new feature. for example, the utf8 conversion, turbo's performance
+is lower than [vamos](https://github.com/kumose/vamose), but it is stable, some case, we
+do not need that high performance in production.
+
+## 🛠️ Build
+
+This project uses [kmpkg](https://github.com/kumose/kmcmake) for dependency management and build integration.
+`kmpkg` automatically handles third-party library downloads, dependency resolution, and compiler flag configuration, avoiding the need to manually maintain complex CMake settings.
+
+
+### 0. Prepare the environment
+
+- Linux (Ubuntu 20.04+ / CentOS 7+ Recommended)
+- CMake >= 3.20
+- GCC >= 9.4 / Clang >= 12
+- Make sure `kmpkg` is installed correctly, documents see [installation guide](https://kumo-pub.github.io/docs/category/%E6%8C%81%E7%BB%AD%E9%9B%86%E6%88%90----kmpkg)
+
+### 1.Configure the project (optional)
+
+* For the complete dependencies, refer to [`kmpkg.json`](kmpkg.json)
+* To update the dependency baseline, modify the `baseline` in `default-registry` of [`kmpkg-configuration.json`](kmpkg-configuration.json)
+* the `baseline` can be obtained via `git log`.
+
+
+### 2. Build the project
+
+Run in the project root directory:
+
+```bash
+cmake --preset=defualt
+cmake --build build -j$(nproc)
+```
+#### Using Manual Dependency Management
+
+If you manage dependencies yourself, you can build the project
+with standard CMake commands:
 
 ```shell
-git clone https://github.com/kumose/turbo.git
-cd turbo
-cmake --preset=kmpkg
-cmake --build build
+mkdir build
+cd build
+cmake ..
+make -j$(nproc)
 ```
 
-# 开发编译
+**Note**
+
+- `--preset=default` requires that the corresponding CMake preset is defined in the project root directory.
+- When managing dependencies manually, make sure CMake’s find_package can locate all required libraries.
+
+### 3. Run Tests (Optional)
+
+Run in the project root directory:
 
 ```shell
-kmpkg install gtest
-kmpkg install benchmark
-git clone https://github.com/kumose/turbo.git
-cd turbo
-mkdir build && cd build
-cmake --preset=kmpkg -DCARBIN_BUILD_TEST=ON
-cmake --build build
-cd build && make test 
+ctest --test-dir build
 ```
-# Try Try Try
 
-* Read [overview](https://turbo-docs.readthedocs.io/en/latest/en/overview.html) to know the goals of turbo and its advantages. 
-* Read [getting start](https://turbo-docs.readthedocs.io/en/latest/) for building turbo and work with [examples](examples).
-* Api reference is [here](https://turbo-docs.readthedocs.io/en/latest/en/api/base.html).
-* Carbin is a tool to manage c++ project, it's [here](https://carbin.readthedocs.io/en/latest/).
-* Modules:
-  * platform compact cross platform
-  * base basic types and functions
-  * fiber & flow fiber and task control flow -- **good performance**
-    * Fiber
-    * FiberMutex
-    * FiberCond
-    * FiberBarrier
-    * TaskFlow
-  * simd simd instructions abstraction to batch processing -- **good performance**
-  * flags cmd line tools help to parse cmd line
-  * strings strings and std::string_view processing
-  * concurrent threading and lock options
-    * Barrier
-    * CallOnce
-    * SpinLock
-    * ThreadLocal
-  * times time and date processing -- **good performance**
-    * Time
-    * Duration
-    * CivilTime
-    * TimeZone
-  * format  string format and table format -- **good performance**
-    * format string
-    * println
-    * table format
-  * logging logging and log to file -- **good performance**
-  * files c++17 filesystem and convenient file api
-    * SequentialReadFile
-    * SequentialWriteFile
-    * RandomAccessFile
-    * RandomWriteFile
-  * hash hash framework and hash functions -- **good performance**
-    * city hash and bytes
-    * murmur hash
-    * xxhash
-  * crypto
-    * md5
-    * sha1
-    * sha256
-    * sha512
-    * crc32
-  * Unicode multi engine unicode support scalar and AVX2 -- **good performance**
-    * utf8
-    * utf16
-    * utf32
-  * profiling profiling with write-most variables                 -- **good performance**
-    * Counter
-    * Histogram
-    * Gauge
-  * random random number generator                                -- **good performance**
-    * Random
-    * RandomEngine
-    * RandomDevice
-  * container                                                    -- **good performance**
-    * small_vector stack allocated vector
-    * flat_hash_map goode performance hash map 
-    * flat_hash_set goode performance 
-    * flat_tree_map goode performance 
+## LICENSE
 
-# Acknowledgement
+turbo has some code integrate from below:
 
-* [Turbo](github.com/abseil/abseil-cpp)
-* [Folly](github.com/facebook/folly)
-* [Onnxruntime](github.com/microsoft/onnxruntime)
-* [brpc](github.com/apache/brpc)
-* [tvm](github.com/apache/tvm)
+* [Abseil](https://github.com/abseil/abseil-cpp) licensed by[Apache 2](licenses/abseil.lic)
+* [Brpc](https://github.com/apache/brpc) licensed by[Apache 2](licenses/brpc.lic)
+* [Folly](https://github.com/facebook/folly) licensed by[Apache 2](licenses/folly.lic)
+* [EASTL](https://github.com/electronicarts/EASTL) licensed by[BSD 3](licenses/eastl.lic)
+* [CLI11](https://github.com/CLIUtils/CLI11) licensed by[NEW BSD 3](licenses/cli11.lic)
+
+Kumo offical release as [Apache 2](LICENSE).

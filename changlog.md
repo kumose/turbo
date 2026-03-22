@@ -2,7 +2,7 @@ changelog
 ====
 
 # 0.9.88
-1.update carbin cmake
+1.update kmcmake cmake
 2. remove log, EA using collie-log
 3. remove flags, EA using collie-cli
 4. fix gtest find case

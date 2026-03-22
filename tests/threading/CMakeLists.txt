@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME thread_local_test
         MODULE threading 
         SOURCES thread_local_test.cc
@@ -28,7 +28,7 @@ carbin_cc_test(
 
 
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME lazy_instance_test
         MODULE threading 
         SOURCES lazy_instance_test.cc
@@ -43,7 +43,7 @@ carbin_cc_test(
 
 
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME platform_thread_test
         MODULE threading 
         SOURCES platform_thread_test.cc
@@ -56,7 +56,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME simple_thread_test
         MODULE threading 
         SOURCES simple_thread_test.cc
@@ -69,7 +69,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME thread_collision_warner_test
         MODULE threading 
         SOURCES thread_collision_warner_test.cc
@@ -83,7 +83,7 @@ carbin_cc_test(
 )
 
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME thread_id_name_manager_test
         MODULE threading 
         SOURCES thread_id_name_manager_test.cc
@@ -96,7 +96,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME internal_thread_local_test
         MODULE threading 
         SOURCES internal_thread_local_test.cc
@@ -109,7 +109,7 @@ carbin_cc_test(
         ${KMCMAKE_DEPS_LINK}
 )
 
-carbin_cc_test(
+kmcmake_cc_test(
         NAME waitable_event_test
         MODULE threading 
         SOURCES waitable_event_test.cc

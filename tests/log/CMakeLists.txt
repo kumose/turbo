@@ -1,22 +1,19 @@
+# Copyright (C) Kumo inc. and its affiliates.
 #
-# Copyright (C) 2024 EA group inc.
-# Author: Jeff.li lijippy@163.com
-# All rights reserved.
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME scoped_mock_log
         SOURCES scoped_mock_log.cc scoped_mock_log.h
@@ -24,10 +21,10 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME test_actions
         SOURCES test_actions.cc test_actions.h
@@ -35,10 +32,10 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME test_matchers
         SOURCES test_matchers.cc test_matchers.h
@@ -46,10 +43,10 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
-carbin_cc_test_library(
+kmcmake_cc_test_library(
         NAMESPACE turbo
         NAME test_helpers
         SOURCES test_helpers.cc test_helpers.h
@@ -57,7 +54,7 @@ carbin_cc_test_library(
         turbo::turbo
         GTest::gtest
         GTest::gmock
-        CXXOPTS ${CARBIN_CXX_OPTIONS}
+        CXXOPTS ${KMCMAKE_CXX_OPTIONS}
 )
 
 set(LOG_TEST_SRC
@@ -84,7 +81,7 @@ set(LOG_TEST_SRC
 
 foreach (test ${LOG_TEST_SRC})
 
-    carbin_cc_test(
+    kmcmake_cc_test(
             NAME ${test}
             MODULE log
             SOURCES ${test}.cc
@@ -97,7 +94,7 @@ foreach (test ${LOG_TEST_SRC})
             GTest::gtest
             GTest::gmock
             GTest::gmock_main
-            ${CARBIN_DEPS_LINK}
-            CXXOPTS ${CARBIN_CXX_OPTIONS}
+            ${KMCMAKE_DEPS_LINK}
+            CXXOPTS ${KMCMAKE_CXX_OPTIONS}
     )
 endforeach ()
