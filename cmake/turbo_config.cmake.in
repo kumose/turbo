@@ -23,7 +23,7 @@ set(@PROJECT_NAME@_VERSION @PROJECT_VERSION@)
 set(@PROJECT_NAME@_INCLUDE_DIR ${PACKAGE_PREFIX_DIR}/include)
 
 
-#include_directories(${PACKAGE_PREFIX_DIR}/include)
+include_directories(${PACKAGE_PREFIX_DIR}/include)
 
 set(@PROJECT_NAME@_ARCH_FLAGS @KMCMAKE_ARCH_OPTION@)
 
