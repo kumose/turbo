@@ -1,7 +1,7 @@
 ############
 # ea recipes
 ############
-gottingen/carbin-recipes@ea
+gottingen/kmcmake-recipes@ea
 
 #########################
 # testing tools googlegtest benchmark

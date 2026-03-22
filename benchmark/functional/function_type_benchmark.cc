@@ -1,18 +1,16 @@
-// Copyright (C) 2024 EA group inc.
-// Author: Jeff.li lijippy@163.com
-// All rights reserved.
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 Kumo inc. and its affiliates. All Rights Reserved.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 
 #include <functional>
@@ -21,7 +19,6 @@
 
 #include <benchmark/benchmark.h>
 #include <turbo/base/macros.h>
-#include <turbo/functional/any_invocable.h>
 #include <turbo/functional/function_ref.h>
 
 namespace turbo {
@@ -66,11 +63,6 @@ void BM_TrivialFunctionRef(benchmark::State& state) {
 }
 BENCHMARK(BM_TrivialFunctionRef);
 
-void BM_TrivialAnyInvocable(benchmark::State& state) {
-  ConstructAndCallFunctionBenchmark<AnyInvocable<void()>>(state,
-                                                          TrivialFunctor{});
-}
-BENCHMARK(BM_TrivialAnyInvocable);
 
 void BM_LargeStdFunction(benchmark::State& state) {
   ConstructAndCallFunctionBenchmark<std::function<void()>>(state,
@@ -84,11 +76,6 @@ void BM_LargeFunctionRef(benchmark::State& state) {
 BENCHMARK(BM_LargeFunctionRef);
 
 
-void BM_LargeAnyInvocable(benchmark::State& state) {
-  ConstructAndCallFunctionBenchmark<AnyInvocable<void()>>(state,
-                                                          LargeFunctor{});
-}
-BENCHMARK(BM_LargeAnyInvocable);
 
 void BM_FunPtrStdFunction(benchmark::State& state) {
   ConstructAndCallFunctionBenchmark<std::function<void()>>(state, FreeFunction);
@@ -100,10 +87,6 @@ void BM_FunPtrFunctionRef(benchmark::State& state) {
 }
 BENCHMARK(BM_FunPtrFunctionRef);
 
-void BM_FunPtrAnyInvocable(benchmark::State& state) {
-  ConstructAndCallFunctionBenchmark<AnyInvocable<void()>>(state, FreeFunction);
-}
-BENCHMARK(BM_FunPtrAnyInvocable);
 
 // Doesn't include construction or copy overhead in the loop.
 template <typename Function, typename Callable, typename... Args>
@@ -136,11 +119,6 @@ void BM_TrivialArgsFunctionRef(benchmark::State& state) {
 }
 BENCHMARK(BM_TrivialArgsFunctionRef);
 
-void BM_TrivialArgsAnyInvocable(benchmark::State& state) {
-  CallFunctionBenchmark<AnyInvocable<void(int, int, int)>>(
-      state, FunctorWithTrivialArgs{}, 1, 2, 3);
-}
-BENCHMARK(BM_TrivialArgsAnyInvocable);
 
 struct FunctorWithNonTrivialArgs {
   void operator()(std::string a, std::string b, std::string c) const {
@@ -166,13 +144,6 @@ void BM_NonTrivialArgsFunctionRef(benchmark::State& state) {
 }
 BENCHMARK(BM_NonTrivialArgsFunctionRef);
 
-void BM_NonTrivialArgsAnyInvocable(benchmark::State& state) {
-  std::string a, b, c;
-  CallFunctionBenchmark<
-      AnyInvocable<void(std::string, std::string, std::string)>>(
-      state, FunctorWithNonTrivialArgs{}, a, b, c);
-}
-BENCHMARK(BM_NonTrivialArgsAnyInvocable);
 
 }  // namespace
 TURBO_NAMESPACE_END

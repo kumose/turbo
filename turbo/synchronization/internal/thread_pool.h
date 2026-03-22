@@ -1,18 +1,16 @@
-// Copyright (C) 2024 EA group inc.
-// Author: Jeff.li lijippy@163.com
-// All rights reserved.
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Affero General Public License as published
-// by the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// Copyright (C) 2026 Kumo inc. and its affiliates. All Rights Reserved.
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Affero General Public License for more details.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// You should have received a copy of the GNU Affero General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 
 #ifndef TURBO_SYNCHRONIZATION_INTERNAL_THREAD_POOL_H_
@@ -27,7 +25,6 @@
 #include <vector>
 
 #include <turbo/base/thread_annotations.h>
-#include <turbo/functional/any_invocable.h>
 #include <turbo/synchronization/mutex.h>
 
 namespace turbo {
@@ -60,7 +57,7 @@ class ThreadPool {
   }
 
   // Schedule a function to be run on a ThreadPool thread immediately.
-  void Schedule(turbo::AnyInvocable<void()> func) {
+  void Schedule(std::function<void()> func) {
     assert(func != nullptr);
     turbo::MutexLock l(&mu_);
     queue_.push(std::move(func));
@@ -73,7 +70,7 @@ class ThreadPool {
 
   void WorkLoop() {
     while (true) {
-      turbo::AnyInvocable<void()> func;
+      std::function<void()> func;
       {
         turbo::MutexLock l(&mu_);
         mu_.Await(turbo::Condition(this, &ThreadPool::WorkAvailable));
@@ -88,7 +85,7 @@ class ThreadPool {
   }
 
   turbo::Mutex mu_;
-  std::queue<turbo::AnyInvocable<void()>> queue_ TURBO_GUARDED_BY(mu_);
+  std::queue<std::function<void()>> queue_ TURBO_GUARDED_BY(mu_);
   std::vector<std::thread> threads_;
 };
 

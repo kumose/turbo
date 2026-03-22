@@ -42,7 +42,7 @@ cmake-build-debug
 bazel-out
 bazel-*
 .clwb
-carbin
+kmcmake
 docs/xml
 .vscode
 turbo/version.h

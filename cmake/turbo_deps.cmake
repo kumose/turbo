@@ -1,11 +1,10 @@
-#
-# Copyright 2023 The Carbin Authors.
+# Copyright (C) Kumo inc. and its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    https://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,42 +15,44 @@
 ############################################################
 # system pthread and rt, dl
 ############################################################
-set(CARBIN_SYSTEM_DYLINK)
+set(KMCMAKE_SYSTEM_DYLINK)
 if (APPLE)
     find_library(CoreFoundation CoreFoundation)
-    list(APPEND CARBIN_SYSTEM_DYLINK ${CoreFoundation} pthread)
+    list(APPEND KMCMAKE_SYSTEM_DYLINK ${CoreFoundation} pthread)
 elseif (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    list(APPEND CARBIN_SYSTEM_DYLINK rt dl pthread)
+    list(APPEND KMCMAKE_SYSTEM_DYLINK rt dl pthread)
 endif ()
 
-if (CARBIN_BUILD_TEST OR CARBIN_BUILD_BENCHMARK)
+if (KMCMAKE_BUILD_TEST)
     enable_testing()
-    find_package(GTest REQUIRED)
-    find_path(GTEST_INCLUDE_PATH gtest/gtest.h)
-    include_directories(${GTEST_INCLUDE_PATH})
-endif (CARBIN_BUILD_TEST OR CARBIN_BUILD_BENCHMARK)
+    #include(require_gtest)
+    #include(require_gmock)
+    #include(require_doctest)
+endif (KMCMAKE_BUILD_TEST)
 
-if (CARBIN_BUILD_BENCHMARK)
-    find_package(benchmark REQUIRED)
-    find_path(BENCHMARK_INCLUDE_PATH benchmark/benchmark.h)
-    include_directories(${BENCHMARK_INCLUDE_PATH})
+if (KMCMAKE_BUILD_BENCHMARK)
+    #include(require_benchmark)
 endif ()
 
 find_package(Threads REQUIRED)
 
 ############################################################
 #
-# add you libs to the CARBIN_DEPS_LINK variable eg as turbo
+# add you libs to the KMCMAKE_DEPS_LINK variable eg as turbo
 # so you can and system pthread and rt, dl already add to
-# CARBIN_SYSTEM_DYLINK, using it for fun.
+# KMCMAKE_SYSTEM_DYLINK, using it for fun.
 ##########################################################
-set(CARBIN_DEPS_LINK
-        ${CARBIN_SYSTEM_DYLINK}
+set(KMCMAKE_DEPS_LINK
+        #${TURBO_LIB}
+        ${KMCMAKE_SYSTEM_DYLINK}
         )
-list(REMOVE_DUPLICATES CARBIN_DEPS_LINK)
-carbin_print_list_label("Denpendcies:" CARBIN_DEPS_LINK)
+list(REMOVE_DUPLICATES KMCMAKE_DEPS_LINK)
+kmcmake_print_list_label("Denpendcies:" KMCMAKE_DEPS_LINK)
 
-
+############################################################
+# for binary
+############################################################
+set(KMCMAKE_STATIC_BIN_OPTION -static-libgcc -static-libstdc++)
 
 
 
